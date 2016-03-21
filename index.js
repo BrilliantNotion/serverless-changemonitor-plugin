@@ -3,7 +3,6 @@
 /**
  * Serverless AutoDeploy Plugin
  */
-
 module.exports = function(S)
 {
 	const SCli = require(S.getServerlessPath('utils/cli'));
@@ -22,22 +21,29 @@ module.exports = function(S)
 	/**
 	 * ServerlessChangeMonitorPlugin
 	 */
-
 	class ServerlessChangeMonitorPlugin extends S.classes.Plugin
 	{
+		/**
+		 * Constructor
+		 */
 		constructor()
 		{
 			super();
 
+			// The minimum serverless version required by the plugin.
 			this._serverlessVersionMinimum = "0.5.0";
+
+			// The delay after a file has been saved (in ms) before the deploy is triggered.
 			this._deployTriggerDelay = 500;
 
+			// The options for the fsWatcher instances.
 			this._fsWatcherOptions =
 			{
 				"persistent": true,
 				"recursive": false
 			};
 
+			// The directories which are ignored by default.
 			this._directoriesIgnore =
 			[
 				".git",
@@ -46,6 +52,7 @@ module.exports = function(S)
 				"plugins"
 			];
 
+			// The files which are ignored by default.
 			this._filesIgnore =
 			[
 				"s-function.js",
@@ -56,6 +63,7 @@ module.exports = function(S)
 				"event.json"
 			];
 
+			// The extensions which are monitored for changes.
 			this._fileExtensions =
 			[
 				// ".py",
@@ -63,17 +71,25 @@ module.exports = function(S)
 				".js"
 			];
 
+			// The library directories which a monitored.
 			this._libDirectories = [];
+
+			// The fsWatcher instances used for monitoring.
 			this._fsWatchers = {};
+
+			// The function names currently being deployed.
 			this._currentlyDeploying = [];
+
+			// The queue of job functions pending.
 			this._jobQueue = [];
+
+			// The flag status for the job queue.
 			this._jobQueueRunning = false;
 		}
 
 		/**
 		 * Plugin Name
 		 */
-
 		static getName()
 		{
 			return 'com.brilliantnotion.' + ServerlessChangeMonitorPlugin.name;
@@ -82,9 +98,11 @@ module.exports = function(S)
 		/**
 		 * Register Actions
 		 */
-
 		registerActions()
 		{
+			/**
+			 * Add Action Deploy
+			 */
 			S.addAction(this.changeMonitorDeploy.bind(this),
 			{
 				"handler": "changeMonitorDeploy",
@@ -156,7 +174,6 @@ module.exports = function(S)
 		/**
 		 * Register Hooks
 		 */
-
 		registerHooks()
 		{
 			// Add function deploy post hook.
@@ -172,9 +189,9 @@ module.exports = function(S)
 		/**
 		 * Change Monitor Deploy
 		 */
-
 		changeMonitorDeploy(evt)
 		{
+			// Base variables.
 			let _this = this;
 			_this.evt = evt;
 
@@ -184,14 +201,22 @@ module.exports = function(S)
 			.then(_this._watchersStart);
 		}
 
+		/**
+		 * Check Serverless Version
+		 */ 
 		_checkServerlessVersion()
 		{
+			// Check if current Serverless version is equal or greater than the current version.
 			if(!semver.satisfies(S._version, ">=" + this._serverlessVersionMinimum))
 				SCli.log(chalk.red.bold("WARNING: This version of the Serverless Optimizer Plugin will not work with a version of Serverless that is less than v0.2."));
 		}
 
+		/**
+		 * Validate and Prepare
+		 */
 		_validateAndPrepare()
 		{
+			// Base variables.
 			let _this = this;
 
 			return new BbPromise(function(resolve, reject)
@@ -231,12 +256,20 @@ module.exports = function(S)
 			});
 		}
 
+		/**
+		 * Watchers Start
+		 */
 		_watchersStart()
 		{
+			// Base variables.
 			let _this = this;
+
 			return new BbPromise(function(resolve, reject)
 			{
+				// Setup the CLI and start monitoring for keypresses.
 				_this._cliHandlerStart();
+
+				// Begin watching the current directory.
 				_this._watchStart("./");
 
 				// The change monitor will never resolve.
@@ -244,16 +277,25 @@ module.exports = function(S)
 			});
 		}
 
+		/**
+		 * Sound the bell.
+		 */
 		_bell()
 		{
 			SCli.log('\x07');
 		}
 
+		/**
+		 * Check if the process was called interactively.
+		 */
 		_isInteractive()
 		{
 			return process.stdout.isTTY && !process.env.CI;
 		}
 
+		/**
+		 * Check if a file exists.
+		 */
 		_fileExists(filePath)
 		{
 			try
@@ -266,6 +308,9 @@ module.exports = function(S)
 			}
 		}
 
+		/**
+		 * Get an array of directories within the specified directory.
+		 */
 		_getDirectories(directory)
 		{
 			return fs.readdirSync(directory).filter(function(file)
@@ -274,6 +319,9 @@ module.exports = function(S)
 			});
 		}
 
+		/**
+		 * Handler called each time a key is pressed.
+		 */
 		_keypressHandler(chunk, key)
 		{
 			if(key)
@@ -292,6 +340,9 @@ module.exports = function(S)
 			}
 		}
 
+		/**
+		 * Setup the CLI and start monitoring keypresses.
+		 */
 		_cliHandlerStart()
 		{
 			if(process.stdout.isTTY)
@@ -303,6 +354,9 @@ module.exports = function(S)
 			}
 		}
 
+		/**
+		 * Determine if the current file should be deployed.
+		 */
 		_shouldDeploy(directory, filename)
 		{
 			let filePath = path.join(directory, filename);
@@ -311,23 +365,32 @@ module.exports = function(S)
 			// Check if file is in ignore list.
 			if(this._filesIgnore.indexOf(filename) !== -1)
 			{
-				S.utils.sDebug("Skipping ignored file \""+filePath+"\"");
+				S.utils.sDebug("Skipping ignored file \""+filePath+"\".");
 				return false;
 			}
 
 			// Check if file extension is supported.
 			if(this._fileExtensions.indexOf(path.extname(filename)) === -1)
+			{
+				S.utils.sDebug("Skipping unsupported file extension \""+path.extname(filename)+"\".");
 				return false;
+			}
 
 			return true;
 		}
 
+		/**
+		 * Get the function name from an s-function.json file.
+		 */
 		_functionNameResolve(filePath)
 		{
 			let fileData = S.utils.readFileSync(filePath);
 			return fileData.name;
 		}
 
+		/**
+		 * Find all the function names within a directory.
+		 */
 		_functionsInDirectory(directory)
 		{
 			let _this = this;
@@ -351,6 +414,9 @@ module.exports = function(S)
 			return functionNames;
 		}
 
+		/**
+		 * Deploy the specified function names.
+		 */
 		_functionDeploy(functionNames)
 		{
 			let _this = this;
@@ -369,6 +435,9 @@ module.exports = function(S)
 			});
 		}
 
+		/**
+		 * Start the job queue.
+		 */
 		_jobQueueStart()
 		{
 			S.utils.sDebug("_jobQueueStart()");
@@ -388,6 +457,9 @@ module.exports = function(S)
 			this._jobQueueNext(this);
 		}
 
+		/**
+		 * Execute the next job in the job queue.
+		 */
 		_jobQueueNext(_this)
 		{
 			S.utils.sDebug("_jobQueueNext()");
@@ -409,6 +481,9 @@ module.exports = function(S)
 			job(_this._jobQueueNext);
 		}
 
+ 		/**
+		 * Deploy the specified file.
+		 */
 		_deploy(directory, filename)
 		{
 			let _this = this;
@@ -460,6 +535,9 @@ module.exports = function(S)
 			}
 		}
 
+		/**
+		 * Add a watcher on the specified directory.
+		 */
 		_addWatcher(directory)
 		{
 			let _this = this;
@@ -475,6 +553,9 @@ module.exports = function(S)
 			});
 		}
 
+		/**
+		 * Start watching a directory.
+		 */
 		_watchStart(directory)
 		{
 			let _this = this;
@@ -499,7 +580,6 @@ module.exports = function(S)
 		/**
 		 * POST Hook
 		 */
-
 		_hookPost(evt)
 		{
 			let _this = this;
