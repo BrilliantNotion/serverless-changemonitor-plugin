@@ -1,22 +1,23 @@
 'use strict';
 
 /**
- * Serverless AutoDeploy Plugin
+ * Serverless Change Monitor Plugin
  */
 module.exports = function(S)
 {
-	const SCli = require(S.getServerlessPath('utils/cli'));
-	const SError = require(S.getServerlessPath('Error'));
-	const path = require('path');
-	const fs = require('fs');
+	// Global Resources
 	const BbPromise = require('bluebird');
-	const process = require("process");
-	const spawn = require("child_process").spawn;
-	const keypress = require('keypress');
-	const glob = require("glob");
-	const _ = require("lodash");
 	const chalk = require("chalk");
+	const fs = require('fs');
+	const glob = require("glob");
+	const keypress = require('keypress');
+	const path = require('path');
+	const process = require("process");
+	const SCli = require(S.getServerlessPath('utils/cli'));
 	const semver = require("semver");
+	const SError = require(S.getServerlessPath('Error'));
+	const spawn = require("child_process").spawn;
+	const _ = require("lodash");
 
 	/**
 	 * ServerlessChangeMonitorPlugin

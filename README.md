@@ -1,4 +1,4 @@
-Serverless ChangeMonitor Plugin
+Serverless Change Monitor Plugin
 ===
 
 Monitors your project's files and automatically deploys the function when a change is detected.
