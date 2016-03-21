@@ -510,7 +510,7 @@ module.exports = function(S)
 				_.pullAll(_this._currentlyDeploying, evt.options.names);
 
 				// If bell was set, trigger.
-				if(_this.evt.options.beep);
+				if(_this.evt && _this.evt.options.beep)
 					_this._bell();
 
 				return resolve(evt);
