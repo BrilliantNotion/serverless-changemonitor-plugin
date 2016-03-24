@@ -1,12 +1,15 @@
 Serverless Change Monitor Plugin
 ===
 
+[![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
+[![npm version](https://badge.fury.io/js/serverless-changemonitor-plugin.svg)](https://badge.fury.io/js/serverless-changemonitor-plugin)
+
 Monitors your project's files and automatically deploys the function when a change is detected.
 
 **Note:** Requires Serverless v0.5.0 or higher.
 
 Setup
-===
+---
 
 * Install via npm in the root of your Serverless Project:
 ```
@@ -31,7 +34,7 @@ sls changemonitor deploy -b
 * All done!
 
 Common Pitfalls
-===
+---
 
 ### Beep Does Not Work
 
